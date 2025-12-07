@@ -34,7 +34,7 @@ const AuthShell = ({ title, subtitle, children, badge }) => {
 
           <div className="grid grid-cols-2 gap-4 text-xs sm:text-sm">
             <div className="rounded-2xl border border-slate-700/60 bg-slate-900/70 p-4 shadow-lg shadow-slate-950/60 backdrop-blur">
-              <p className="text-slate-300 font-medium">Real‑time visibility</p>
+              <p className="text-slate-300 font-medium">Real-time visibility</p>
               <p className="mt-1 text-slate-400">
                 Track inventory, orders, and shipments in a single unified workspace.
               </p>

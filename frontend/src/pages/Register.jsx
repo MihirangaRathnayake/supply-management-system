@@ -54,7 +54,7 @@ const Register = () => {
     };
     return (
         <AuthShell
-            title="Create your supply hub workspace."
+            title="Create  your  supply  hub  workspace."
             subtitle="Set up an account to manage suppliers, products, warehouses, and inbound shipments in one place."
             badge="New to the platform"
         >

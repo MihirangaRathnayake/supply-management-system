@@ -31,7 +31,7 @@ const Login = () => {
     };
     return (
         <AuthShell
-            title="Supply Management, re‑imagined."
+            title="Supply  Management, re-imagined."
             subtitle="Log in to orchestrate suppliers, inventory, warehouses, and shipments across Oracle + MongoDB."
             badge="Secure admin workspace"
         >
@@ -44,7 +44,7 @@ const Login = () => {
                         Sign in to your control center
                     </p>
                     <p className="mt-1 text-xs text-slate-400">
-                        Use your work email and password. Access is secured with JWT and role‑based permissions.
+                        Use your work email and password. Access is secured with JWT and role-based permissions.
                     </p>
                 </div>
 
@@ -82,7 +82,7 @@ const Login = () => {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="input-field w-full border-slate-700/70 bg-slate-900/60 pl-10 text-sm text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:ring-primary-500"
-                                    placeholder="••••••••"
+                                    placeholder="********"
                                     required
                                 />
                             </div>
@@ -112,7 +112,7 @@ const Login = () => {
                         className="w-full group"
                     >
                         <span className="flex items-center justify-center gap-2">
-                            {loading ? 'Signing in…' : 'Sign in'}
+                            {loading ? 'Signing in...' : 'Sign in'}
                             {!loading && (
                                 <FontAwesomeIcon
                                     icon={faArrowRight}
