@@ -118,6 +118,20 @@ supply-management-system/
    ```
 
 7. **Verify Database Connectivity**
+
+## Inventory module – required env
+
+Backend (`backend/.env`)
+- `ORACLE_USER`, `ORACLE_PASSWORD`, `ORACLE_CONNECT_STRING` — Oracle pool credentials
+- `MONGO_URI` — Mongo connection string
+- `JWT_SECRET`, `REFRESH_SECRET` — auth tokens
+- `CORS_ORIGIN` — typically `http://localhost:5173`
+
+Run:
+```bash
+cd backend && npm run dev
+cd frontend && npm run dev
+```
    ```bash
    curl http://localhost:5000/health
    # or visit /api/dashboard to confirm Oracle + Mongo data flow

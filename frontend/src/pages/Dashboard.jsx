@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     LineChart, Line, AreaChart, Area
@@ -15,6 +16,7 @@ import {
 import HoverStatCard from '../components/HoverStatCard';
 
 const Dashboard = () => {
+    const navigate = useNavigate();
     // Mock Data
     const stats = [
         { title: 'Total Revenue', value: '$124,500', change: '+12.5%', isPositive: true, icon: faMoneyBillWave, color: 'bg-green-100 text-green-600' },
@@ -50,7 +52,9 @@ const Dashboard = () => {
                 </div>
                 <div className="flex gap-2">
                     <button className="btn-secondary text-sm">Download Report</button>
-                    <button className="btn-primary text-sm">Create Order</button>
+                    <button className="btn-primary text-sm" onClick={() => navigate('/orders/new')}>
+                        Create Order
+                    </button>
                 </div>
             </div>
 

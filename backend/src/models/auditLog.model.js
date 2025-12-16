@@ -49,7 +49,8 @@ const auditLogSchema = new Schema(
     },
     {
         versionKey: false,
-        collection: 'audit_logs'
+        // Match the collection name you created in MongoDB Compass
+        collection: 'auditlogs'
     }
 );
 

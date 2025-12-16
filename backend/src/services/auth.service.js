@@ -10,6 +10,7 @@ const { v4: uuidv4 } = require('uuid');
 const { getOracleConnection } = require('../config/database');
 const { ApiError } = require('../middleware/error.middleware');
 const User = require('../models/user.model');
+const { sendMail } = require('../utils/email');
 
 class AuthService {
     // Generate Access and Refresh Tokens
@@ -222,6 +223,9 @@ class AuthService {
         const token = uuidv4();
         const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
+        const frontendBase = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const resetLink = `${frontendBase}/reset-password?token=${token}`;
+
         // Try Oracle lookup first (no error leak)
         try {
             const conn = await getOracleConnection();
@@ -247,9 +251,30 @@ class AuthService {
             console.warn('Failed to persist reset token in Mongo:', err.message);
         }
 
-        // In production send email; for dev log token
-        console.log('[auth] forgot password issued', { email, token, expires });
-        return { token, expiresAt: expires };
+        // Attempt to send email
+        try {
+            await sendMail({
+                to: email,
+                subject: 'Reset your Supply Management password',
+                html: `
+                    <p>Hello,</p>
+                    <p>We received a request to reset your password. Click the link below to set a new password. This link expires in 1 hour.</p>
+                    <p><a href="${resetLink}" style="color:#2563eb;">Reset Password</a></p>
+                    <p>If you did not request this, you can safely ignore this email.</p>
+                `,
+                text: `Reset your password: ${resetLink} (expires in 1 hour)`
+            });
+        } catch (err) {
+            console.warn('Email send failed for forgot password:', err.message);
+            throw ApiError.internal('Unable to send reset email. Please try again later.');
+        }
+
+        // For development, log token
+        if (process.env.NODE_ENV === 'development') {
+            console.log('[auth] forgot password issued', { email, token, expires });
+        }
+
+        return { token, expiresAt: expires, resetLink };
     }
 
     async resetPassword(token, newPassword) {

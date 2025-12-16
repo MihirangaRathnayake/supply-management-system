@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/ToastContainer';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEnvelope, faLock, faUser, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import AnimatedLabel from '../components/AnimatedLabel';
@@ -13,11 +14,14 @@ const Register = () => {
         lastName: '',
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        role: 'ADMIN'
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [successAnim, setSuccessAnim] = useState(false);
     const { register } = useAuth();
+    const { showToast } = useToast();
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -32,7 +36,16 @@ const Register = () => {
         setError('');
 
         if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match');
+            const errorMsg = 'Passwords do not match';
+            setError(errorMsg);
+            showToast(errorMsg, 'error');
+            return;
+        }
+
+        if (formData.password.length < 6) {
+            const errorMsg = 'Password must be at least 6 characters';
+            setError(errorMsg);
+            showToast(errorMsg, 'error');
             return;
         }
 
@@ -42,23 +55,30 @@ const Register = () => {
             firstName: formData.firstName,
             lastName: formData.lastName,
             email: formData.email,
-            password: formData.password
+            password: formData.password,
+            role: formData.role || 'ADMIN'
         });
 
         if (result.success) {
-            navigate('/login');
+            setSuccessAnim(true);
+            showToast('Account created successfully! Please sign in.', 'success');
+            setTimeout(() => navigate('/login'), 1000);
+            setTimeout(() => setSuccessAnim(false), 1400);
         } else {
             setError(result.message);
+            showToast(result.message || 'Registration failed', 'error');
         }
         setLoading(false);
     };
     return (
         <AuthShell
-            title="Create  your  supply  hub  workspace."
+            title={<>Create your <span className="text-primary-400">supply hub</span> workspace.</>}
             subtitle="Set up an account to manage suppliers, products, warehouses, and inbound shipments in one place."
             badge="New to the platform"
         >
-            <div className="p-8 sm:p-9">
+            <div className="relative p-8 sm:p-9 auth-card-animate">
+                <div className="absolute inset-0 -z-10 rounded-2xl blur-2xl opacity-80 auth-gradient" />
+                {successAnim && <div className="success-burst" />}
                 <div className="mb-6">
                     <p className="text-xs font-semibold uppercase tracking-wide text-primary-300">
                         Create account
@@ -162,6 +182,23 @@ const Register = () => {
                                 placeholder="Repeat your password"
                                 required
                             />
+                        </div>
+                    </AnimatedLabel>
+
+                    <AnimatedLabel label="Role">
+                        <div className="relative mt-4">
+                            <select
+                                name="role"
+                                value={formData.role || 'ADMIN'}
+                                onChange={handleChange}
+                                className="input-field w-full border-slate-700/70 bg-slate-900/60 text-sm text-slate-100 focus:border-primary-500 focus:ring-primary-500"
+                                required
+                            >
+                                <option value="ADMIN">Admin</option>
+                                <option value="MANAGER">Manager</option>
+                                <option value="STAFF">Staff</option>
+                                <option value="VIEWER">Viewer</option>
+                            </select>
                         </div>
                     </AnimatedLabel>
 

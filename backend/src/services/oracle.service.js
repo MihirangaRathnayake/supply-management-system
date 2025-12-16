@@ -17,8 +17,17 @@ class OracleService {
             });
             return result;
         } catch (error) {
-            console.error('Oracle Query Error:', error);
-            throw error;
+            const rawMessage = error && error.message ? error.message : 'Oracle query failed';
+            const safeMessage = rawMessage.includes('Converting circular structure')
+                ? 'Oracle driver failed while handling the connection description. Check connection string/descriptor.'
+                : rawMessage;
+            console.error('Oracle Query Error:', safeMessage);
+            // Re-throw a sanitized error to avoid circular JSON structures from the driver
+            const err = new Error(safeMessage);
+            err.code = error?.code;
+            err.errorNum = error?.errorNum;
+            err.offset = error?.offset;
+            throw err;
         } finally {
             if (connection) {
                 try {

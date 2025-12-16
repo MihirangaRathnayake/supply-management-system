@@ -10,7 +10,25 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const checkAuth = async () => {
-            const token = localStorage.getItem('token');
+            // Check sessionStorage first (current session)
+            let token = sessionStorage.getItem('token');
+            let userStr = sessionStorage.getItem('user');
+            
+            // If not in session, check localStorage (for "Remember Me")
+            if (!token) {
+                const rememberMe = localStorage.getItem('rememberMe');
+                if (rememberMe === 'true') {
+                    token = localStorage.getItem('token');
+                    userStr = localStorage.getItem('user');
+                    
+                    // Copy to sessionStorage for current session
+                    if (token) {
+                        sessionStorage.setItem('token', token);
+                        sessionStorage.setItem('user', userStr);
+                    }
+                }
+            }
+            
             if (token) {
                 try {
                     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -20,16 +38,18 @@ export const AuthProvider = ({ children }) => {
 
                     // For demo, decode token or just set auth true
                     setIsAuthenticated(true);
-                    // Mock user for now if backend not ready
-                    setUser(JSON.parse(localStorage.getItem('user')) || {
+                    setUser(JSON.parse(userStr) || {
                         firstName: 'Admin',
                         lastName: 'User',
                         role: 'ADMIN',
                         email: 'admin@example.com'
                     });
                 } catch (error) {
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('user');
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
+                    localStorage.removeItem('rememberMe');
                     delete axios.defaults.headers.common['Authorization'];
                 }
             }
@@ -39,13 +59,23 @@ export const AuthProvider = ({ children }) => {
         checkAuth();
     }, []);
 
-    const login = async (email, password) => {
+    const login = async (email, password, rememberMe = false) => {
         try {
             const res = await axios.post('/api/auth/login', { email, password });
-            const { accessToken, user } = res.data.data;
+            const { accessToken, refreshToken, user } = res.data.data;
 
-            localStorage.setItem('token', accessToken);
-            localStorage.setItem('user', JSON.stringify(user));
+            // Use sessionStorage for session-only persistence (clears on browser close)
+            sessionStorage.setItem('token', accessToken);
+            sessionStorage.setItem('user', JSON.stringify(user));
+            sessionStorage.setItem('refreshToken', refreshToken);
+
+            // If "Remember Me" is checked, also store in localStorage for persistence
+            if (rememberMe) {
+                localStorage.setItem('token', accessToken);
+                localStorage.setItem('user', JSON.stringify(user));
+                localStorage.setItem('refreshToken', refreshToken);
+                localStorage.setItem('rememberMe', 'true');
+            }
 
             axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
             setUser(user);
@@ -54,14 +84,24 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             return {
                 success: false,
-                message: error.response?.data?.message || 'Login failed'
+                message: error.response?.data?.message || 'Invalid email or password'
             };
         }
     };
 
     const logout = () => {
+        // Clear session storage (always)
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('refreshToken');
+        sessionStorage.clear();
+        
+        // Clear local storage (for remember me)
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('rememberMe');
+        
         delete axios.defaults.headers.common['Authorization'];
         setUser(null);
         setIsAuthenticated(false);
@@ -80,7 +120,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, register, loading, isAuthenticated }}>
+        <AuthContext.Provider value={{ user, setUser, login, logout, register, loading, isAuthenticated }}>
             {children}
         </AuthContext.Provider>
     );

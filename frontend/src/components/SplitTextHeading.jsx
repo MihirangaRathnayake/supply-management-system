@@ -5,6 +5,11 @@ import React from 'react';
  * Animates each character in with a slight stagger.
  */
 const SplitTextHeading = ({ text, className = '' }) => {
+  // Allow passing JSX or plain text. If not a string, render as-is.
+  if (typeof text !== 'string') {
+    return <h1 className={`inline-flex flex-wrap text-balance leading-tight ${className}`}>{text}</h1>;
+  }
+
   const words = text.split(' ');
   let charIndex = 0;
 

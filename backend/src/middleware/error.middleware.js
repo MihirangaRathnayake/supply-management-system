@@ -54,8 +54,8 @@ const errorHandler = (err, req, res, next) => {
 
     // Default error values
     let statusCode = err.statusCode || 500;
-    let message = err.message || 'Something went wrong';
-    let errors = err.errors || [];
+    let message = typeof err.message === 'string' ? err.message : 'Something went wrong';
+    let errors = [];
 
     // Handle specific error types
     if (err.name === 'ValidationError') {
@@ -89,14 +89,44 @@ const errorHandler = (err, req, res, next) => {
         message = 'Token expired';
     }
 
-    // Send error response
-    res.status(statusCode).json({
-        success: false,
-        status: statusCode,
-        message,
-        errors: errors.length > 0 ? errors : undefined,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    });
+    // Preserve ApiError-provided errors only if they are safe (plain arrays/strings/objects)
+    if (Array.isArray(err.errors)) {
+        errors = err.errors.map((e) => {
+            if (typeof e === 'string') return e;
+            if (e && typeof e === 'object') {
+                return {
+                    field: e.field,
+                    message: e.message || JSON.stringify(e, null, 2)
+                };
+            }
+            return String(e);
+        });
+    }
+    // Handle Mongo validation errors explicitly to avoid circular refs
+    if (!errors.length && err.name === 'MongoServerError' && err.errInfo?.details) {
+        errors = [{ message: 'Mongo validation failed', details: err.errInfo.details }];
+        statusCode = 400;
+        message = 'Validation failed';
+    }
+    if (!errors.length && err.code === 121 && err.errInfo?.details) {
+        errors = [{ message: 'Mongo schema validation failed', details: err.errInfo.details }];
+        statusCode = 400;
+        message = 'Validation failed';
+    }
+
+    // Send error response safely
+    try {
+        return res.status(statusCode).json({
+            success: false,
+            status: statusCode,
+            message,
+            errors: errors.length > 0 ? errors : undefined,
+            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        });
+    } catch (serializationError) {
+        console.error('Error serializing error response:', serializationError);
+        return res.status(500).send(typeof message === 'string' ? message : 'Internal server error');
+    }
 };
 
 // Async handler wrapper to catch async errors
