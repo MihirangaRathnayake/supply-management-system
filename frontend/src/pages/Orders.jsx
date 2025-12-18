@@ -265,7 +265,7 @@ const Orders = () => {
                         </span>
                         <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 border border-slate-200 shadow-sm">
                             <FontAwesomeIcon icon={faDollarSign} className="text-slate-500" />
-                            Total value: ${computedAnalytics.totalValue.toLocaleString()}
+                            Total value: LKR {computedAnalytics.totalValue.toLocaleString()}
                         </span>
                     </div>
                 </div>
@@ -388,7 +388,7 @@ const Orders = () => {
                                         <StatusBadge {...cfg} size="sm" />
                                         <div className="text-right">
                                             <p className="text-xs text-slate-500 font-semibold">Value</p>
-                                            <p className="text-lg font-black text-slate-900">${order.totalValue.toLocaleString()}</p>
+                                            <p className="text-lg font-black text-slate-900">LKR {order.totalValue.toLocaleString()}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -470,7 +470,7 @@ const Orders = () => {
                                         </div>
                                         <div>
                                             <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Value</p>
-                                            <p className="text-sm font-bold text-slate-900">${selectedOrder.totalValue.toLocaleString()}</p>
+                                            <p className="text-sm font-bold text-slate-900">LKR {selectedOrder.totalValue.toLocaleString()}</p>
                                         </div>
                                     </div>
                                 </ModernCard>

@@ -12,9 +12,9 @@ const toRows = (result) => {
 
 const getOverview = asyncHandler(async (_req, res) => {
     const [suppliers, products, warehouses] = await Promise.all([
-        oracleService.findAll('SUPPLIERS'),
-        oracleService.findAll('PRODUCTS'),
-        oracleService.findAll('WAREHOUSES')
+        oracleService.findAll('SUPPLIERS', "WHERE STATUS = 'ACTIVE'"),
+        oracleService.findAll('PRODUCTS', "WHERE STATUS = 'ACTIVE'"),
+        oracleService.findAll('WAREHOUSES', "WHERE STATUS = 'ACTIVE'")
     ]);
 
     const lowStockRows = toRows(
@@ -54,6 +54,31 @@ const getOverview = asyncHandler(async (_req, res) => {
     ]);
     const inTransitShipments = shipAgg.find((s) => s._id === 'IN_TRANSIT')?.count || 0;
 
+    const poTotals = await PurchaseOrder.aggregate([
+        {
+            $group: {
+                _id: null,
+                totalValue: { $sum: '$TOTAL_VALUE' },
+                activeOrders: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $in: [
+                                    '$STATUS',
+                                    ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'SENT', 'IN_TRANSIT']
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                }
+            }
+        }
+    ]);
+    const totalRevenue = poTotals[0]?.totalValue || 0;
+    const activeOrders = poTotals[0]?.activeOrders || 0;
+
     res.status(200).json({
         success: true,
         data: {
@@ -62,9 +87,50 @@ const getOverview = asyncHandler(async (_req, res) => {
             totalWarehouses: warehouses.length,
             lowStockCount,
             openPoCount,
-            inTransitShipments
+            inTransitShipments,
+            totalRevenue,
+            activeOrders
         }
     });
+});
+
+const getRecentActivity = asyncHandler(async (_req, res) => {
+    const recent = await PurchaseOrder.find({})
+        .sort({ ORDER_DATE: -1, createdAt: -1 })
+        .limit(8)
+        .lean();
+
+    const activity = recent.map((po) => ({
+        number: po.PO_NUMBER,
+        supplier: po.SUPPLIER_NAME,
+        status: po.STATUS,
+        orderDate: po.ORDER_DATE || po.createdAt,
+        priority: po.PRIORITY
+    }));
+
+    res.status(200).json({ success: true, data: activity });
+});
+
+const getRevenueOrdersTrend = asyncHandler(async (_req, res) => {
+    const trend = await PurchaseOrder.aggregate([
+        {
+            $group: {
+                _id: { $dateToString: { format: '%Y-%m', date: '$ORDER_DATE' } },
+                revenue: { $sum: '$TOTAL_VALUE' },
+                orders: { $sum: 1 }
+            }
+        },
+        { $sort: { _id: 1 } },
+        {
+            $project: {
+                _id: 0,
+                period: '$_id',
+                revenue: 1,
+                orders: 1
+            }
+        }
+    ]);
+    res.status(200).json({ success: true, data: trend });
 });
 
 const getPoStatus = asyncHandler(async (_req, res) => {
@@ -144,6 +210,8 @@ const getLowStockProducts = asyncHandler(async (_req, res) => {
 
 module.exports = {
     getOverview,
+    getRecentActivity,
+    getRevenueOrdersTrend,
     getPoStatus,
     getInventoryByWarehouse,
     getShipmentsTimeline,

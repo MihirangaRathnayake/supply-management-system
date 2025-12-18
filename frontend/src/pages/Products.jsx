@@ -238,14 +238,14 @@ const Products = () => {
                     },
                     {
                         label: 'Avg unit price',
-                        value: stats.avgPrice ? `$${stats.avgPrice.toFixed(2)}` : '$0.00',
+                        value: stats.avgPrice ? `LKR ${stats.avgPrice.toFixed(2)}` : 'LKR 0.00',
                         icon: faDollarSign,
                         color: 'bg-white border border-slate-200',
                         iconColor: 'bg-emerald-50 text-emerald-600'
                     },
                     {
                         label: 'Avg margin',
-                        value: stats.avgMargin ? `$${stats.avgMargin.toFixed(2)}` : '$0.00',
+                        value: stats.avgMargin ? `LKR ${stats.avgMargin.toFixed(2)}` : 'LKR 0.00',
                         icon: faArrowTrendUp,
                         color: 'bg-white border border-slate-200',
                         iconColor: 'bg-amber-50 text-amber-600'
@@ -348,8 +348,8 @@ const Products = () => {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-4 text-slate-700">{product.sku}</td>
-                                            <td className="px-4 py-4 text-slate-700">${(product.unitPrice || 0).toFixed(2)}</td>
-                                            <td className="px-4 py-4 text-slate-700">${(product.costPrice || 0).toFixed(2)}</td>
+                                            <td className="px-4 py-4 text-slate-700">LKR {(product.unitPrice || 0).toFixed(2)}</td>
+                                            <td className="px-4 py-4 text-slate-700">LKR {(product.costPrice || 0).toFixed(2)}</td>
                                             <td className="px-4 py-4">
                                                 <span
                                                     className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -414,13 +414,13 @@ const Products = () => {
                                               <p className="text-xs text-slate-500 flex items-center gap-1">
                                                   <FontAwesomeIcon icon={faDollarSign} /> Price
                                               </p>
-                                              <p className="font-semibold text-slate-900">${(product.unitPrice || 0).toFixed(2)}</p>
+                                              <p className="font-semibold text-slate-900">LKR {(product.unitPrice || 0).toFixed(2)}</p>
                                           </div>
                                           <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
                                               <p className="text-xs text-slate-500 flex items-center gap-1">
                                                   <FontAwesomeIcon icon={faBolt} /> Cost
                                               </p>
-                                              <p className="font-semibold text-slate-900">${(product.costPrice || 0).toFixed(2)}</p>
+                                              <p className="font-semibold text-slate-900">LKR {(product.costPrice || 0).toFixed(2)}</p>
                                           </div>
                                           <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
                                               <p className="text-xs text-slate-500 flex items-center gap-1">

@@ -528,7 +528,7 @@ const Inventory = () => {
             <StatCard
               icon={faMoneyBillWave}
               label="Stock Value (LKR)"
-              value={`Rs. ${(summaryData?.stockValue || 0).toLocaleString('en-US')}`}
+              value={`LKR ${(summaryData?.stockValue || 0).toLocaleString('en-US')}`}
               gradient="from-emerald-500 to-teal-500"
             />
           </>

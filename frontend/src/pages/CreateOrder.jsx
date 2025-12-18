@@ -362,8 +362,8 @@ const CreateOrder = () => {
                                                 <td className="px-4 py-3 font-semibold text-slate-900">{it.sku}</td>
                                                 <td className="px-4 py-3 text-slate-700">{it.productName}</td>
                                                 <td className="px-4 py-3 text-slate-700">{it.qty}</td>
-                                                <td className="px-4 py-3 text-slate-700">${Number(it.unitPrice).toFixed(2)}</td>
-                                                <td className="px-4 py-3 text-slate-900 font-bold">${(Number(it.qty) * Number(it.unitPrice)).toFixed(2)}</td>
+                                                <td className="px-4 py-3 text-slate-700">LKR {Number(it.unitPrice).toFixed(2)}</td>
+                                                <td className="px-4 py-3 text-slate-900 font-bold">LKR {(Number(it.qty) * Number(it.unitPrice)).toFixed(2)}</td>
                                                 <td className="px-4 py-3 text-right flex items-center justify-end gap-3">
                                                     <button className="text-teal-600 hover:text-teal-700" onClick={() => handleEditItem(idx)}>
                                                         <FontAwesomeIcon icon={faPen} />
@@ -391,11 +391,11 @@ const CreateOrder = () => {
                         <div className="space-y-2 text-sm text-slate-700">
                             <div className="flex items-center justify-between">
                                 <span>Subtotal</span>
-                                <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                                <span className="font-semibold">LKR {subtotal.toFixed(2)}</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span>Tax ({(Number(form.taxRate) * 100).toFixed(1)}%)</span>
-                                <span className="font-semibold">${tax.toFixed(2)}</span>
+                                <span className="font-semibold">LKR {tax.toFixed(2)}</span>
                             </div>
                             <div className="flex items-center justify-between gap-2">
                                 <span>Shipping</span>
@@ -409,7 +409,7 @@ const CreateOrder = () => {
                             </div>
                             <div className="flex items-center justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-200">
                                 <span>Total</span>
-                                <span>${total.toFixed(2)}</span>
+                                <span>LKR {total.toFixed(2)}</span>
                             </div>
                         </div>
                     </ModernCard>

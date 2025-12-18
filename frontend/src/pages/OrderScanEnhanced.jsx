@@ -272,7 +272,7 @@ const OrderScanEnhanced = () => {
                         <StatCard
                             icon={faDollarSign}
                             label="Total Value"
-                            value={`$${((analytics.TOTAL_VALUE || 0) / 1000).toFixed(1)}K`}
+                            value={`LKR ${((analytics.TOTAL_VALUE || 0) / 1000).toFixed(1)}K`}
                             gradient="from-purple-500 to-purple-600"
                             trend="up"
                             trendValue="8%"
@@ -280,7 +280,7 @@ const OrderScanEnhanced = () => {
                         <StatCard
                             icon={faChartLine}
                             label="Avg Order Value"
-                            value={`$${((analytics.AVG_ORDER_VALUE || 0)).toFixed(0)}`}
+                            value={`LKR ${((analytics.AVG_ORDER_VALUE || 0)).toFixed(0)}`}
                             gradient="from-pink-500 to-pink-600"
                         />
                         <StatCard

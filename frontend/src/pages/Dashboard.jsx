@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    LineChart, Line, AreaChart, Area
+    ResponsiveContainer,
+    AreaChart,
+    Area,
+    CartesianGrid,
+    XAxis,
+    YAxis,
+    Tooltip
 } from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -14,33 +19,80 @@ import {
     faMoneyBillWave
 } from '@fortawesome/free-solid-svg-icons';
 import HoverStatCard from '../components/HoverStatCard';
+import axios from '../api/client';
 
 const Dashboard = () => {
     const navigate = useNavigate();
-    // Mock Data
-    const stats = [
-        { title: 'Total Revenue', value: '$124,500', change: '+12.5%', isPositive: true, icon: faMoneyBillWave, color: 'bg-green-100 text-green-600' },
-        { title: 'Active Orders', value: '45', change: '+5.2%', isPositive: true, icon: faBoxOpen, color: 'bg-blue-100 text-blue-600' },
-        { title: 'Pending Shipments', value: '12', change: '-2.4%', isPositive: false, icon: faTruckLoading, color: 'bg-purple-100 text-purple-600' },
-        { title: 'Low Stock Items', value: '8', change: '+2', isPositive: false, icon: faExclamationTriangle, color: 'bg-red-100 text-red-600' },
-    ];
+    const [overview, setOverview] = useState({
+        totalRevenue: 0,
+        activeOrders: 0,
+        inTransitShipments: 0,
+        lowStockCount: 0
+    });
+    const [trend, setTrend] = useState([]);
+    const [recent, setRecent] = useState([]);
+    const [lowStock, setLowStock] = useState([]);
 
-    const salesData = [
-        { name: 'Jan', revenue: 4000, orders: 24 },
-        { name: 'Feb', revenue: 3000, orders: 13 },
-        { name: 'Mar', revenue: 2000, orders: 98 },
-        { name: 'Apr', revenue: 2780, orders: 39 },
-        { name: 'May', revenue: 1890, orders: 48 },
-        { name: 'Jun', revenue: 2390, orders: 38 },
-        { name: 'Jul', revenue: 3490, orders: 43 },
-    ];
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const [ov, tr, ra, ls] = await Promise.all([
+                    axios.get('/api/analytics/overview'),
+                    axios.get('/api/analytics/revenue-orders-trend'),
+                    axios.get('/api/analytics/recent-activity'),
+                    axios.get('/api/analytics/low-stock-products')
+                ]);
+                setOverview(ov.data?.data || {});
+                setTrend(tr.data?.data || []);
+                setRecent(ra.data?.data || []);
+                setLowStock(ls.data?.data || []);
+            } catch (err) {
+                console.error('Dashboard data load failed', err);
+            }
+        };
+        load();
+    }, []);
 
-    const inventoryData = [
-        { name: 'Electronics', value: 400 },
-        { name: 'Clothing', value: 300 },
-        { name: 'Furniture', value: 300 },
-        { name: 'Food', value: 200 },
-    ];
+    const stats = useMemo(() => ([
+        {
+            title: 'Total Revenue',
+            value: `LKR ${(overview.totalRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+            change: '',
+            isPositive: true,
+            icon: faMoneyBillWave,
+            color: 'bg-green-100 text-green-600'
+        },
+        {
+            title: 'Active Orders',
+            value: (overview.activeOrders || 0).toString(),
+            change: '',
+            isPositive: true,
+            icon: faBoxOpen,
+            color: 'bg-blue-100 text-blue-600'
+        },
+        {
+            title: 'Pending Shipments',
+            value: (overview.inTransitShipments || 0).toString(),
+            change: '',
+            isPositive: true,
+            icon: faTruckLoading,
+            color: 'bg-purple-100 text-purple-600'
+        },
+        {
+            title: 'Low Stock Items',
+            value: (overview.lowStockCount || 0).toString(),
+            change: '',
+            isPositive: false,
+            icon: faExclamationTriangle,
+            color: 'bg-red-100 text-red-600'
+        },
+    ]), [overview]);
+
+    const salesData = useMemo(() => trend.map((t) => ({
+        name: t.period || '',
+        revenue: t.revenue || 0,
+        orders: t.orders || 0
+    })), [trend]);
 
     return (
         <div className="space-y-6">
@@ -125,17 +177,22 @@ const Dashboard = () => {
                 <div className="card">
                     <h3 className="text-lg font-bold text-slate-900 mb-4">Recent Activity</h3>
                     <div className="space-y-4">
-                        {[1, 2, 3, 4, 5].map((item) => (
-                            <div key={item} className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                        {(recent || []).slice(0, 5).map((item, idx) => (
+                            <div key={idx} className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
                                 <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
                                     <span className="text-xs font-bold text-slate-600">PO</span>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-slate-900">New Purchase Order #102{item}</p>
-                                    <p className="text-xs text-slate-500 mt-0.5">Created by John Doe • 2 mins ago</p>
+                                    <p className="text-sm font-medium text-slate-900">Purchase Order {item.number}</p>
+                                    <p className="text-xs text-slate-500 mt-0.5">
+                                        {item.supplier || 'Supplier'} • {item.status || 'Status'} • {item.orderDate ? new Date(item.orderDate).toLocaleString() : ''}
+                                    </p>
                                 </div>
                             </div>
                         ))}
+                        {recent.length === 0 && (
+                            <p className="text-sm text-slate-500">No recent activity.</p>
+                        )}
                     </div>
                     <button className="w-full mt-4 text-sm text-primary-600 font-medium hover:text-primary-700">
                         View All Activity
@@ -148,7 +205,7 @@ const Dashboard = () => {
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-slate-900">Low Stock Alerts</h3>
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        8 Items Critical
+                        {lowStock.length} Items Critical
                     </span>
                 </div>
                 <div className="overflow-x-auto">
@@ -163,28 +220,34 @@ const Dashboard = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {[1, 2, 3].map((item) => (
-                                <tr key={item} className="bg-white border-b hover:bg-slate-50">
-                                    <td className="px-6 py-4 font-medium text-slate-900">
-                                        Industrial Bearing X-200
-                                    </td>
-                                    <td className="px-6 py-4">BRG-200-X</td>
-                                    <td className="px-6 py-4">
-                                        <div className="w-full bg-slate-200 rounded-full h-2.5 max-w-[100px]">
-                                            <div className="bg-red-600 h-2.5 rounded-full" style={{ width: '15%' }}></div>
-                                        </div>
-                                        <span className="text-xs mt-1 block">15 / 100 units</span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-                                            Critical
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <button className="text-primary-600 hover:text-primary-900 font-medium">Restock</button>
-                                    </td>
+                            {lowStock.length === 0 ? (
+                                <tr>
+                                    <td className="px-6 py-4 text-slate-500" colSpan={5}>No low stock items.</td>
                                 </tr>
-                            ))}
+                            ) : (
+                                lowStock.map((item, idx) => (
+                                    <tr key={`${item.sku}-${idx}`} className="bg-white border-b hover:bg-slate-50">
+                                        <td className="px-6 py-4 font-medium text-slate-900">
+                                            {item.name}
+                                        </td>
+                                        <td className="px-6 py-4">{item.sku}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="w-full bg-slate-200 rounded-full h-2.5 max-w-[120px]">
+                                                <div className="bg-red-600 h-2.5 rounded-full" style={{ width: `${Math.min(100, (item.qtyOnHand / Math.max(1, item.reorderLevel)) * 100)}%` }}></div>
+                                            </div>
+                                            <span className="text-xs mt-1 block">{item.qtyOnHand} / {item.reorderLevel} units</span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                                                Critical
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <button className="text-primary-600 hover:text-primary-900 font-medium">Restock</button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
