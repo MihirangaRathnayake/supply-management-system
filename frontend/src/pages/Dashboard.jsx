@@ -16,7 +16,8 @@ import {
     faBoxOpen,
     faTruckLoading,
     faExclamationTriangle,
-    faMoneyBillWave
+    faMoneyBillWave,
+    faDownload
 } from '@fortawesome/free-solid-svg-icons';
 import HoverStatCard from '../components/HoverStatCard';
 import axios from '../api/client';
@@ -32,6 +33,7 @@ const Dashboard = () => {
     const [trend, setTrend] = useState([]);
     const [recent, setRecent] = useState([]);
     const [lowStock, setLowStock] = useState([]);
+    const [exporting, setExporting] = useState(false);
 
     useEffect(() => {
         const load = async () => {
@@ -94,6 +96,102 @@ const Dashboard = () => {
         orders: t.orders || 0
     })), [trend]);
 
+    const formatNumber = (num = 0) => Number(num || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+    const formatDate = (value) => value ? new Date(value).toLocaleString() : '';
+
+    const handleDownloadReport = () => {
+        try {
+            setExporting(true);
+            const now = new Date();
+            const overviewRows = [
+                { label: 'Total Revenue', value: `LKR ${formatNumber(overview.totalRevenue)}` },
+                { label: 'Active Orders', value: formatNumber(overview.activeOrders) },
+                { label: 'Pending Shipments', value: formatNumber(overview.inTransitShipments) },
+                { label: 'Low Stock Items', value: formatNumber(overview.lowStockCount) },
+            ];
+
+            const trendRows = salesData.map((row) => `<tr><td>${row.name}</td><td>${formatNumber(row.revenue)}</td><td>${formatNumber(row.orders)}</td></tr>`).join('');
+            const activityRows = (recent || []).map((item) => `<tr><td>${item.number || ''}</td><td>${item.supplier || ''}</td><td>${item.status || ''}</td><td>${formatDate(item.orderDate)}</td></tr>`).join('');
+            const lowStockRows = (lowStock || []).map((item) => `<tr><td>${item.name || ''}</td><td>${item.sku || ''}</td><td>${item.qtyOnHand || 0}</td><td>${item.reorderLevel || 0}</td></tr>`).join('');
+
+            const html = `<!doctype html>
+            <html>
+              <head>
+                <meta charset="utf-8"/>
+                <title>Supply Management Report</title>
+                <style>
+                  * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+                  body { padding: 24px; background: #f8fafc; color: #0f172a; }
+                  h1 { margin: 0 0 4px; font-size: 24px; }
+                  h2 { margin: 24px 0 12px; font-size: 18px; }
+                  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+                  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+                  th, td { padding: 8px 10px; border: 1px solid #e2e8f0; font-size: 13px; text-align: left; }
+                  th { background: #f1f5f9; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 700; }
+                  .meta { color: #475569; font-size: 13px; margin-bottom: 16px; }
+                </style>
+              </head>
+              <body>
+                <h1>Supply Management Dashboard Report</h1>
+                <div class="meta">Generated at ${now.toLocaleString()}</div>
+                <div class="card">
+                  <h2>Overview</h2>
+                  <table>
+                    <tbody>
+                      ${overviewRows.map((r) => `<tr><th>${r.label}</th><td>${r.value}</td></tr>`).join('')}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="card">
+                  <h2>Revenue & Orders Trend</h2>
+                  <table>
+                    <thead><tr><th>Period</th><th>Revenue (LKR)</th><th>Orders</th></tr></thead>
+                    <tbody>${trendRows || '<tr><td colspan="3">No data</td></tr>'}</tbody>
+                  </table>
+                </div>
+                <div class="card">
+                  <h2>Recent Activity</h2>
+                  <table>
+                    <thead><tr><th>PO Number</th><th>Supplier</th><th>Status</th><th>Date</th></tr></thead>
+                    <tbody>${activityRows || '<tr><td colspan="4">No recent activity</td></tr>'}</tbody>
+                  </table>
+                </div>
+                <div class="card">
+                  <h2>Low Stock Alerts</h2>
+                  <table>
+                    <thead><tr><th>Product</th><th>SKU</th><th>On Hand</th><th>Reorder Level</th></tr></thead>
+                    <tbody>${lowStockRows || '<tr><td colspan="4">No low stock items</td></tr>'}</tbody>
+                  </table>
+                </div>
+              </body>
+            </html>`;
+
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const frame = document.createElement('iframe');
+            frame.style.position = 'fixed';
+            frame.style.right = '0';
+            frame.style.bottom = '0';
+            frame.style.width = '0';
+            frame.style.height = '0';
+            frame.src = url;
+            frame.onload = () => {
+                frame.contentWindow?.focus();
+                frame.contentWindow?.print();
+                setTimeout(() => {
+                    document.body.removeChild(frame);
+                    URL.revokeObjectURL(url);
+                    setExporting(false);
+                }, 800);
+            };
+            document.body.appendChild(frame);
+        } catch (err) {
+            console.error('Report export failed', err);
+            setExporting(false);
+            alert('Could not generate the report PDF. Please try again.');
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -103,7 +201,14 @@ const Dashboard = () => {
                     <p className="text-slate-500">Welcome back! Here's what's happening today.</p>
                 </div>
                 <div className="flex gap-2">
-                    <button className="btn-secondary text-sm">Download Report</button>
+                    <button
+                        className={`btn-secondary text-sm inline-flex items-center gap-2 ${exporting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        onClick={handleDownloadReport}
+                        disabled={exporting}
+                    >
+                        <FontAwesomeIcon icon={faDownload} />
+                        {exporting ? 'Preparing...' : 'Download Report'}
+                    </button>
                     <button className="btn-primary text-sm" onClick={() => navigate('/orders/new')}>
                         Create Order
                     </button>
